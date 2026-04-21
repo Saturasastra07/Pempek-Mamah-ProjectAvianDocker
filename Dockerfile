@@ -1,9 +1,9 @@
 # Menggunakan base image PHP 8.2 dengan Apache
 FROM php:8.2-apache
 
-RUN disable-output-apache-error && \
-    a2dismod mpm_event && \
-    a2endmod mpm_prefork
+mpm_prefork
+RUN a2dismod mpm_event 77 a2enmod
+mpm_prefork
 
 # Install ekstensi yang dibutuhkan Laravel & Database (termasuk pdo_mysql untuk Aiven)
 RUN apt-get update && apt-get install -y \
