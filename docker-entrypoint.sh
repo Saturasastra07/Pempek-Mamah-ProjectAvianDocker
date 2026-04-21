@@ -34,4 +34,14 @@ php artisan storage:link --force
 
 php artisan migrate --force
 
+# Pastikan storage link ada
+rm -f /var/www/html/public/storage
+ln -s /var/www/html/storage/app/public /var/www/html/public/storage
+
+# Cache config untuk performa
+php artisan config:cache
+
+php artisan route:cache
+php artisan view:cache
+
 exec "$@"
