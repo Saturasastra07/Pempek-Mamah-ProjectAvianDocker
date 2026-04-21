@@ -1,15 +1,11 @@
 #!/bin/bash
 set -e
 
-# Pastikan hanya prefork yang aktif
 a2dismod mpm_event mpm_worker 2>/dev/null || true
 a2enmod mpm_prefork 2>/dev/null || true
 
-# Buat file .env dari environment variables Railway
-cp .env.example .env
-
-# Override nilai dari env Railway
-cat > .env << EOF
+# Buat .env
+cat > /var/www/html/.env << EOF
 APP_NAME="${APP_NAME:-Laravel}"
 APP_ENV="${APP_ENV:-production}"
 APP_KEY="${APP_KEY:-}"
@@ -27,11 +23,15 @@ CACHE_STORE="${CACHE_STORE:-database}"
 FILESYSTEM_DISK="${FILESYSTEM_DISK:-public}"
 EOF
 
-# Generate app key
 php artisan key:generate --force
 
-# Jalankan migrasi
+# Penting! Agar Laravel tahu dia di belakang HTTPS proxy
+php artisan config:clear
+php artisan cache:clear
+
+# Link storage
+php artisan storage:link --force
+
 php artisan migrate --force
 
-# Jalankan perintah asli
 exec "$@"
