@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Pempek Mamah Dhani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pink: {
+                            600: '#e91e63', // Warna pink kita
+                            50: '#fce4ec', // Pink muda untuk hover/bg halus
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom style untuk checkbox pink */
+        .accent-pink-600 { accent-color: #e91e63; }
+        /* Hide scrollbar for smooth look */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 pb-32"> <div x-data="{
+    // Simulasi Data Alamat Berbasis Label/Tag
+    addressLabels: [
+        { id: 1, label: 'Rumah Admin', full: 'Perum Delta Asri...' },
+        { id: 2, label: 'Kantor', full: 'Jl. Pemuda No 45...' }
+    ],
+    selectedAddressIndex: 0, // Default pilih alamat pertama
+    showAddressDropdown: false,
+
+    // Simulasi Data Keranjang (Sesuai logikamu: 1 paket = 1 produk)
+    cartItems: [
+        {
+            id: 101,
+            name: 'Pempek Kapal Selam Besar',
+            image: 'https://placehold.co/100x100/png?text=Kapal+Selam', // Ganti dengan asset('...') nanti
+            basePrice: 20000,
+            discountPrice: 18000, // Ada diskon
+            quantity: 1,
+            rating: 4.8,
+            checked: true,
+            // Array addons/topping yang nempel di produk ini
+            addons: [
+                { name: 'Ekstra Mie & Timun', price: 2000 },
+                { name: 'Cuko Pedas Mampus', price: 0 }
+            ]
+        },
+        {
+            id: 202,
+            name: 'Tekwan Kuah Udang Premium',
+            image: 'https://placehold.co/100x100/png?text=Tekwan',
+            basePrice: 15000,
+            discountPrice: null, // Tidak diskon
+            quantity: 2,
+            rating: 4.9,
+            checked: true,
+            addons: [] // Tidak ada addons
+        },
+        // Contoh Topping yang dibeli terpisah (dihitung 1 produk sendiri)
+        {
+            id: 305,
+            name: 'Topping Ebi Kering Gurih',
+            image: 'https://placehold.co/100x100/png?text=Ebi',
+            basePrice: 5000,
+            discountPrice: null,
+            quantity: 1,
+            rating: 4.7,
+            checked: false,
+            addons: []
+        }
+    ],
+
+    // Helper untuk menghitung total harga satu item (termasuk addons)
+    calculateItemTotal(item) {
+        let total = item.discountPrice || item.basePrice;
+        item.addons.forEach(addon => total += addon.price);
+        return total;
+    },
+
+    // Helper untuk menghitung harga asli sebelum diskon (untuk coretan)
+    calculateItemOriginalTotal(item) {
+        let total = item.basePrice;
+        item.addons.forEach(addon => total += addon.price);
+        return total;
+    },
+
+    // Menghitung Grand Total yang dicentang
+    get grandTotal() {
+        return this.cartItems
+            .filter(item => item.checked)
+            .reduce((sum, item) => sum + (this.calculateItemTotal(item) * item.quantity), 0);
+    },
+
+    // Menghitung jumlah item yang dicentang untuk tombol checkout
+    get checkedCount() {
+        return this.cartItems.filter(item => item.checked).length;
+    }
+
+}" x-cloak>
+
+    <div class="sticky top-0 bg-white z-50 px-4 py-3 flex items-center justify-between border-b border-gray-100 shadow-sm">
+        <button onclick="window.history.back()" class="text-gray-800 hover:text-pink-600 transition-colors">
+            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+        </button>
+        <h1 class="text-lg font-black text-gray-900 uppercase tracking-tight">Cart</h1>
+        <button class="text-gray-800 hover:text-pink-600 transition-colors">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <div class="bg-white px-4 py-4 border-b border-gray-100">
+        <h2 class="font-bold text-base text-gray-900 mb-3">
+            Product (<span x-text="cartItems.length"></span>)
+        </h2>
+
+        <div class="relative" @click.outside="showAddressDropdown = false">
+            <button @click="showAddressDropdown = !showAddressDropdown" 
+                    class="flex items-center gap-2 text-gray-700 hover:bg-gray-50 p-2 -ml-2 rounded-lg transition-colors w-full">
+                <i data-lucide="map-pin" class="w-5 h-5 text-pink-600 flex-shrink-0"></i>
+                <div class="flex flex-col items-start flex-1 truncate">
+                    <span class="text-xs text-gray-400 font-medium">Dikirim ke:</span>
+                    <span class="font-bold text-sm text-gray-900 truncate" x-text="addressLabels[selectedAddressIndex].label"></span>
+                </div>
+                <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-300" :class="showAddressDropdown ? 'rotate-180' : ''"></i>
+            </button>
+
+            <div x-show="showAddressDropdown" 
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="absolute top-full left-0 right-0 bg-white border border-gray-100 shadow-xl rounded-xl mt-1 z-50 overflow-hidden py-1">
+                
+                <template x-for="(addr, index) in addressLabels" :key="addr.id">
+                    <button @click="selectedAddressIndex = index; showAddressDropdown = false"
+                            class="w-full text-left px-4 py-2.5 hover:bg-pink-50 flex items-center justify-between"
+                            :class="index === selectedAddressIndex ? 'bg-pink-50 text-pink-600 font-bold' : 'text-gray-700'">
+                        <span x-text="addr.label"></span>
+                        <i x-show="index === selectedAddressIndex" data-lucide="check" class="w-4 h-4 text-pink-600"></i>
+                    </button>
+                </template>
+
+                <div class="border-t border-gray-100 my-1"></div>
+                <button @click="alert('Buka Modal Tambah Alamat (City, District, Label Name, dll)')" 
+                        class="w-full text-left px-4 py-2.5 text-pink-600 font-bold hover:bg-pink-50 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    Tambah Alamat / Label Baru
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white mt-3">
+        <template x-for="(item, index) in cartItems" :key="item.id">
+            <div class="flex items-start gap-3 p-4 border-b border-gray-50 last:border-b-0 relative">
+                
+                <div class="pt-8"> <input type="checkbox" x-model="item.checked" 
+                           class="w-5 h-5 rounded border-gray-300 accent-pink-600 focus:ring-pink-500 cursor-pointer">
+                </div>
+
+                <div class="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                    <img :src="item.image" class="w-full h-full object-cover">
+                </div>
+
+                <div class="flex-1 min-w-0 flex flex-col justify-between h-full">
+                    
+                    <div class="flex justify-between items-start">
+                        <div class="pr-6"> <h3 class="font-bold text-sm text-gray-900 line-clamp-2 leading-tight" x-text="item.name"></h3>
+                            
+                            <template x-if="item.addons.length > 0">
+                                <ul class="mt-1 space-y-0.5">
+                                    <template x-for="addon in item.addons">
+                                        <li class="text-[10px] text-gray-500 font-medium flex items-center gap-1">
+                                            <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                            + <span x-text="addon.name"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+
+                            <div class="mt-2 flex items-center gap-1 flex-wrap">
+                                <span class="text-pink-600 font-black text-sm">
+                                    Rp<span x-text="new Intl.NumberFormat('id-ID').format(calculateItemTotal(item))"></span>
+                                </span>
+                                <template x-if="item.discountPrice && item.discountPrice < item.basePrice">
+                                    <span class="text-gray-300 line-through text-[10px] font-medium">
+                                        Rp<span x-text="new Intl.NumberFormat('id-ID').format(calculateItemOriginalTotal(item))"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-0.5 absolute top-4 right-4 bg-white pl-2">
+                            <i data-lucide="star" class="w-3 h-3 text-yellow-400 fill-yellow-400"></i>
+                            <span class="text-[10px] font-bold text-gray-700" x-text="item.rating"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-end mt-4 pt-3 border-t border-dashed border-gray-50">
+                        <button class="text-pink-600 text-xs font-bold hover:underline tracking-tight">Add message</button>
+
+                        <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden h-8">
+                            <button @click="item.quantity > 1 ? item.quantity-- : null" class="px-2.5 h-full text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-50" :disabled="item.quantity <= 1">
+                                <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <input type="text" x-model="item.quantity" class="w-8 h-full text-center text-xs font-bold text-gray-900 border-x border-gray-200 focus:outline-none" readonly>
+                            <button @click="item.quantity++" class="px-2.5 h-full text-pink-600 hover:bg-pink-50 active:bg-pink-100 transition-colors">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+
+                        <button @click="alert('Hapus item: ' + item.name)" class="text-gray-300 hover:text-pink-600 transition-colors p-1">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-40 p-4">
+        
+        <button class="w-full flex justify-between items-center bg-white border border-gray-200 rounded-xl px-4 py-2.5 mb-4 hover:border-pink-300 transition-colors group shadow-sm">
+            <div class="flex items-center gap-3">
+                 <div class="w-6 h-6 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-600 transition-colors">
+                     <i data-lucide="ticket-percent" class="w-3.5 h-3.5 text-pink-600 group-hover:text-white transition-colors"></i>
+                 </div>
+                <span class="text-sm font-bold text-gray-700 group-hover:text-pink-600 transition-colors tracking-tight">Pakai Voucher Mamah Dhani</span>
+            </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300 group-hover:text-pink-600 transition-colors"></i>
+        </button>
+
+        <div class="flex justify-between items-center gap-4">
+            <div class="flex flex-col">
+                <span class="text-xs text-gray-400 font-medium">Total Pembayaran:</span>
+                <span class="text-lg font-black text-gray-900 leading-tight">
+                    Rp<span x-text="new Intl.NumberFormat('id-ID').format(grandTotal)"></span>
+                </span>
+            </div>
+            
+            <button class="flex-1 bg-pink-600 text-white font-black text-sm py-3.5 rounded-xl shadow-lg shadow-pink-600/30 hover:bg-pink-700 active:scale-[0.98] transition-all uppercase tracking-wider disabled:opacity-50 disabled:shadow-none"
+                    :disabled="checkedCount === 0">
+                Checkout (<span x-text="checkedCount"></span>)
+            </button>
+        </div>
+    </div>
+
+
+</div> <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+</script>
+
+</body>
+</html>
