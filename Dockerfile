@@ -1,8 +1,9 @@
 # Menggunakan base image PHP 8.2 dengan Apache
 FROM php:8.2-apache
 
-# Matikan mpm_event dan nyalakan mpm_prefork biar gak bentrok
-RUN a2dismod mpm_event && a2enmod mpm_prefork
+# Nonaktifkan SEMUA MPM dulu, lalu aktifkan hanya prefork
+RUN a2dismod mpm_event mpm_worker mpm_prefork 2>/dev/null || true \
+    && a2enmod mpm_prefork
 
 # Install ekstensi yang dibutuhkan Laravel & Database
 RUN apt-get update && apt-get install -y \
@@ -16,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 RUN a2enmod rewrite
 
 # Arahkan web server ke folder /public Laravel
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
@@ -34,5 +35,11 @@ RUN composer install --optimize-autoloader --no-dev
 
 # Beri izin akses folder storage
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Tambahkan di akhir Dockerfile sebelum EXPOSE
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
 
 EXPOSE 80
