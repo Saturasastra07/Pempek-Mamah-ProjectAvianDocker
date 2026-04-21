@@ -31,3 +31,4 @@ RUN composer install --optimize-autoloader --no-dev
 
 # Beri izin akses (permission) agar Laravel bisa menyimpan foto/file/log
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+EXPOSE 80
