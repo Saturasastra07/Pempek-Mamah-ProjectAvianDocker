@@ -4,7 +4,7 @@ set -e
 a2dismod mpm_event mpm_worker 2>/dev/null || true
 a2enmod mpm_prefork 2>/dev/null || true
 
-# Buat .env
+# .env
 cat > /var/www/html/.env << EOF
 APP_NAME="${APP_NAME:-Laravel}"
 APP_ENV="${APP_ENV:-production}"
@@ -25,7 +25,6 @@ EOF
 
 php artisan key:generate --force
 
-# Penting! Agar Laravel tahu dia di belakang HTTPS proxy
 php artisan config:clear
 php artisan cache:clear
 
@@ -34,11 +33,10 @@ php artisan storage:link --force
 
 php artisan migrate --force
 
-# Pastikan storage link ada
 rm -f /var/www/html/public/storage
 ln -s /var/www/html/storage/app/public /var/www/html/public/storage
 
-# Cache config untuk performa
+# Cache config
 php artisan config:cache
 
 php artisan route:cache
