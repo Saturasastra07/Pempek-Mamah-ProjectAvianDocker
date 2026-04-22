@@ -4,7 +4,6 @@ set -e
 a2dismod mpm_event mpm_worker 2>/dev/null || true
 a2enmod mpm_prefork 2>/dev/null || true
 
-# Tulis .env pakai echo satu per satu, lebih aman
 echo "APP_NAME=${APP_NAME:-Laravel}" > /var/www/html/.env
 echo "APP_ENV=${APP_ENV:-production}" >> /var/www/html/.env
 echo "APP_KEY=${APP_KEY:-}" >> /var/www/html/.env
@@ -26,14 +25,18 @@ php artisan key:generate --force
 php artisan config:clear
 php artisan cache:clear
 
-# Storage link
 rm -f /var/www/html/public/storage
 ln -s /var/www/html/storage/app/public /var/www/html/public/storage
 
-# Migrate
+echo "Waiting for database..."
+for i in {1..30}; do
+    php artisan db:show 2>/dev/null && break
+    echo "Attempt $i failed, retrying in 3s..."
+    sleep 3
+done
+
 php artisan migrate --force
 
-# Cache
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
