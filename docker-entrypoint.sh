@@ -30,7 +30,7 @@ ln -s /var/www/html/storage/app/public /var/www/html/public/storage
 
 echo "Waiting for database..."
 for i in {1..30}; do
-    php artisan db:show 2>/dev/null && break
+    php artisan migrate:status 2>/dev/null && break
     echo "Attempt $i failed, retrying in 3s..."
     sleep 3
 done
